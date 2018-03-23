@@ -27,14 +27,15 @@ const start = async () => {
             html: require("handlebars")
         },
         relativeTo: Path.join(__dirname, "public"),
-        path: "html/templates"
+        path: "html/templates",
+        layoutPath: "html/templates/layout"
     })
 
     server.route({
         method: "GET",
         path: "/",
         handler(resquest, reply) {
-            return reply.file("html/statics/lobby.html")
+            return reply.view("lobby")
         } 
         
     })
