@@ -1,0 +1,16 @@
+Projet ISN, Faire un site de jeux en ligne:
+ - Possibilité de jouer en pvp (1v1) entre ami.
+ - Possibilité de rejoindre une partie.
+
+Déroulement de l'accés au site.
+ - Lors de la premiere connection au site le joueur tombe sur une page de lobby.
+ - Le joueur cré une partie ou rejoint une partie déjà créée à l'aide d'un id.
+ - Si le joueur cré une partie, il reçoit un id de game.
+ - Si le joueur rejoint une partie, verifier que la partie n'est pas déjà pleine.
+ - Sinon  le joueur est solicité d'attendre ou de créé une partie.
+
+Chose à faire:
+ - Créé une page de lobby, pour rentrer identifiants, créé partie ou en rejoindre une.
+ - Créé une page web de jeux.
+ - Les informations de la page du joueur seront transmis à l'aide de websockets.
+ - Le serveur sera l'intermediaire qui transmettra les données de chaque joueur aux autres. 
