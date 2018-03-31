@@ -28,6 +28,7 @@ const start = async () => {
         },
         relativeTo: Path.join(__dirname, "public"),
         path: "html/templates",
+        layout: true,
         layoutPath: "html/templates/layout"
     })
 
@@ -44,7 +45,6 @@ const start = async () => {
         method: "GET",
         path: "/game",
         handler(request, reply) {
-            console.log(request)
 
             return reply.view("game.html", {
                 name: "Jacqui",
