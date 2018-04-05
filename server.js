@@ -4,10 +4,13 @@ const Hapi = require("hapi")
 const Nes = require("nes")
 const Inert = require("inert")
 const Path = require("path")
+const Handlebars = require("handlebars")
+Handlebars.registerPartial("ContentPartial", "{{{content}}}")
 
 const server = Hapi.server({
     host: "localhost",
-    port: "8080",
+    port: "4445",
+    
     routes: {
         files: {
             relativeTo: Path.join(__dirname, "public") 
@@ -21,10 +24,11 @@ const start = async () => {
     await server.register(Inert)
     await server.register(Nes)
     await server.register(require("vision"))
+    
 
     server.views({
         engines: {
-            html: require("handlebars")
+            html: Handlebars
         },
         relativeTo: Path.join(__dirname, "public"),
         path: "html/templates",
@@ -46,10 +50,7 @@ const start = async () => {
         path: "/game",
         handler(request, reply) {
 
-            return reply.view("game.html", {
-                name: "Jacqui",
-                ip: request.info.remoteAddress
-            })
+            return reply.view("game.html")
         }
     })
 
