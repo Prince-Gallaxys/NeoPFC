@@ -9,7 +9,7 @@ Handlebars.registerPartial("ContentPartial", "{{{content}}}")
 
 const server = Hapi.server({
     host: "localhost",
-    port: "4445",
+    port: "8080",
     
     routes: {
         files: {
@@ -70,6 +70,16 @@ const start = async () => {
         handler: {
             directory: {
                 path: "css"
+            }
+        }
+    })
+
+    server.route({
+        method: "GET",
+        path: "/js/{param*}",
+        handler: {
+            directory: {
+                path: "js"
             }
         }
     })
