@@ -1,10 +1,10 @@
 "use strict";
 
 const Hapi = require("hapi")
-const Nes = require("nes")
 const Inert = require("inert")
 const Path = require("path")
 const Handlebars = require("handlebars")
+const io = require("socket.io")
 Handlebars.registerPartial("ContentPartial", "{{{content}}}")
 
 const server = Hapi.server({
@@ -22,7 +22,6 @@ const server = Hapi.server({
 const start = async () => {
     
     await server.register(Inert)
-    await server.register(Nes)
     await server.register(require("vision"))
     
 
@@ -44,10 +43,11 @@ const start = async () => {
         } 
         
     })
+    
 
     server.route({
         method: "GET",
-        path: "/game",
+        path: "/game/{id}",
         handler(request, reply) {
 
             return reply.view("game.html")
@@ -83,6 +83,7 @@ const start = async () => {
             }
         }
     })
+    
 
     try {
         await server.start();
