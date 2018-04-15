@@ -24,4 +24,5 @@ for (var i = 0, len = decks.length; i < len; i++) {
         console.log(e.currentTarget)
     })
 }
+var socket = io.connect("http://localhost:8080");
 
