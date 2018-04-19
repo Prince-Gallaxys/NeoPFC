@@ -55,6 +55,14 @@ async function generateUserId() {
     if ( i > 200 ) {
         throw new Error("Trop d'utilisateurs")
     }
+    
+    redis.hmset(
+        `user:${id}`, 
+        "name", "", 
+        "gameId", -1,
+        "score", 0,
+        "status", "joueur"
+    )
 
     redis.sadd("listeUserId", id)
 
@@ -65,7 +73,16 @@ const start = async () => {
     
     await server.register(Inert)
     await server.register(require("vision"))
-    
+
+    server.state("userId", {
+        ttl: null,
+        isSecure: false,
+        isHttpOnly: false,
+        path: "/game",
+        encoding: "base64",
+        clearInvalid: false, // remove invalid cookies
+        strictHeader: true // don't allow violations of RFC 6265
+    });
 
     server.views({
         engines: {
@@ -92,8 +109,8 @@ const start = async () => {
         async handler(request, reply) {
             var gameId = null;
             var userId = null;
-            var userName = request.query.username
-            
+            var userName = request.payload.pseudo
+
             if (!userName) {
                 userName = "Sans nom"
             }
@@ -109,18 +126,32 @@ const start = async () => {
             redis.sadd(`game:${gameId}`, userId)
 
             redis.hmset(
-                `user:${userId}`, 
-                "name", userName, 
-                "gameId", gameId,
-                "score", 0,
-                "status", "joueur"
+                `user:${userId}`,
+                "name", userName,
+                "gameId", gameId
             )
 
-            // return reply.redirect(`/game/${id}`)
-
             reply.state("userId", `${userId}`)
+
+            var nsp = io.of(`/game/${gameId}`)
+
+            nsp.on("connection", function(client) {
+
+                redis.hset("socketIdToUserId", client.id, userId)
+                redis.hset(`user:${userId}`, "socketId", client.id)
+
+                client.on("disconnect", async function(reason) {
+
+                    redis.srem(`game:${gameId}`, userId)
+                    redis.srem("listeGameId", gameId)
+                    redis.srem("listeUserId", userId)
+                    redis.hdel("socketIdToUserId", client.id)
+                    redis.del(`user:${userId}`)
+
+                })
+            })
             
-            return reply.response().created(`/game/${gameId}`)
+            return reply.redirect(`/game/${gameId}`)
         }
     })
     
@@ -128,9 +159,49 @@ const start = async () => {
     server.route({
         method: "GET",
         path: "/game/{id}",
-        handler(request, reply) {
+        async handler(request, reply) {
+
+            console.log(request.state.userId)
+            if (!request.state.userId) {
+                return reply.redirect("/")
+            }
 
             return reply.view("game.html")
+        }
+    })
+
+    server.route({
+        method: "POST",
+        path: "/game/{id}",
+        async handler(request, reply) {
+
+            var userName = request.payload.pseudo
+            var userId = await generateUserId()
+            var gameId = request.params.id
+
+            redis.hmset(
+                `user:${userId}`,
+                "gameId", gameId,
+                "name", userName
+            )
+
+            redis.sadd("listeUserId", userId)
+            redis.sadd(`game:${gameId}`, userId)
+            reply.state("userId", `${userId}`)
+
+            return reply.redirect(`/game/${gameId}`)
+
+        }
+    })
+
+    server.route({
+        method: "GET",
+        path: "/user/{id}/name",
+        handler(request, reply) {
+
+            var userId = request.state.userId
+
+
         }
     })
 
@@ -181,6 +252,3 @@ const start = async () => {
 
 start()
 
-io.sockets.on("connection", function(socket){
-    console.log("Une nouvelle connection");
-})
