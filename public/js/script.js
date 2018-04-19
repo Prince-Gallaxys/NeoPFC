@@ -25,3 +25,6 @@ for (var i = 0, len = decks.length; i < len; i++) {
     })
 }
 
+
+var socket = io.connect(window.location.pathname);
+
