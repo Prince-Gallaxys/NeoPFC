@@ -78,7 +78,7 @@ const start = async () => {
         ttl: null,
         isSecure: false,
         isHttpOnly: false,
-        path: "/game",
+        path: "/",
         encoding: "base64",
         clearInvalid: false, // remove invalid cookies
         strictHeader: true // don't allow violations of RFC 6265
@@ -105,53 +105,78 @@ const start = async () => {
 
     server.route({
         method: "POST",
-        path: "/game",
+        path: "/game/{id?}",
         async handler(request, reply) {
-            var gameId = null;
+
             var userId = null;
+            var gameId = request.params.id;
             var userName = request.payload.pseudo
 
-            if (!userName) {
-                userName = "Sans nom"
-            }
+            if (!gameId) {
+                if (!userName) {
+                    userName = "Sans nom"
+                }
 
-            try {
+                try {
+                    userId = await generateUserId()
+                    gameId = await generateGameId();
+
+                } catch (e) {
+                    console.log(e.message)
+                }
+
+                redis.sadd(`game:${gameId}`, userId)
+
+                redis.hmset(
+                    `user:${userId}`,
+                    "name", userName,
+                    "gameId", gameId
+                )
+                reply.state("userId", `${userId}`)
+
+            } else if (await redis.scard(`game:${gameId}`) < 2) {
                 userId = await generateUserId()
-                gameId = await generateGameId();
 
-            } catch (e) {
-                console.log(e.message)
+                redis.hmset(
+                    `user:${userId}`,
+                    "gameId", gameId,
+                    "name", userName
+                )
+
+                redis.sadd("listeUserId", userId)
+                redis.sadd(`game:${gameId}`, userId)
+                reply.state("userId", `${userId}`)
+
+            } else {
+
+                return reply("Partie pleine")
             }
 
-            redis.sadd(`game:${gameId}`, userId)
-
-            redis.hmset(
-                `user:${userId}`,
-                "name", userName,
-                "gameId", gameId
-            )
-
-            reply.state("userId", `${userId}`)
 
             var nsp = io.of(`/game/${gameId}`)
 
             nsp.on("connection", function(client) {
 
+                console.log("connection")
                 redis.hset("socketIdToUserId", client.id, userId)
                 redis.hset(`user:${userId}`, "socketId", client.id)
 
                 client.on("disconnect", async function(reason) {
-
+                    console.log(reason)
                     redis.srem(`game:${gameId}`, userId)
-                    redis.srem("listeGameId", gameId)
                     redis.srem("listeUserId", userId)
                     redis.hdel("socketIdToUserId", client.id)
                     redis.del(`user:${userId}`)
+                    if (await redis.scard(`game:${gameId}`) === 1) {
+                        redis.srem("listeGameId", gameId)
+                    }
 
                 })
             })
             
-            return reply.redirect(`/game/${gameId}`)
+            return {
+                id: gameId
+            }
         }
     })
     
@@ -161,8 +186,15 @@ const start = async () => {
         path: "/game/{id}",
         async handler(request, reply) {
 
-            console.log(request.state.userId)
-            if (!request.state.userId) {
+            var userId = request.state.userId
+            console.log("Salut")
+            if (!(userId && await redis.sismember("listeUserId", userId))) {
+
+                console.log("Attention")
+                reply.unstate("userId")
+
+                console.log("Pas de probleme")
+
                 return reply.redirect("/")
             }
 
@@ -170,39 +202,66 @@ const start = async () => {
         }
     })
 
+
     server.route({
-        method: "POST",
-        path: "/game/{id}",
+        method: "GET",
+        path: "/game/other/user/name",
         async handler(request, reply) {
 
-            var userName = request.payload.pseudo
-            var userId = await generateUserId()
-            var gameId = request.params.id
+            var userId = request.state.userId
+            var gameId =  await redis.hget(`user:${userId}`, "gameId")
+            var usersId = await redis.smembers(`game:${gameId}`)
+            var otherId = usersId.filter((id) => id !== userId)[0]
 
-            redis.hmset(
-                `user:${userId}`,
-                "gameId", gameId,
-                "name", userName
-            )
+            if (otherId) {
+                return {
+                    name: await redis.hget(`user:${otherId}`, "name")
+                }
+            }
 
-            redis.sadd("listeUserId", userId)
-            redis.sadd(`game:${gameId}`, userId)
-            reply.state("userId", `${userId}`)
+            return {
+                err: "Vous êtes tout seul"
+            }
 
-            return reply.redirect(`/game/${gameId}`)
 
         }
     })
 
     server.route({
         method: "GET",
-        path: "/user/{id}/name",
-        handler(request, reply) {
+        path: "/game/other/user/score",
+        async handler(request, reply) {
+
 
             var userId = request.state.userId
+            var gameId =  await redis.hget(`user:${userId}`, "gameId")
+            var usersId = await redis.smembers(`game:${gameId}`)
+            var otherId = usersId.filter((id) => id !== userId)[0]
+
+            if (otherId) {
+                return {
+                    score: await redis.hget(`user:${otherId}`, "score")
+                }
+            }
+
+            return {
+                err: "Vous êtes tout seul"
+            }
 
 
         }
+    })
+
+    server.route({
+        method: "GET",
+        path: "/free/games",
+        async handler(request, reply) {
+            var gamesId = await redis.smembers("listeGameId")
+            gamesId = gamesId.filter(async (element) => await redis.scard(`game:${element}`) === 1)
+
+            return gamesId
+        }
+
     })
 
     server.route({
