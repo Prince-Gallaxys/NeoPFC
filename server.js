@@ -6,71 +6,28 @@ const Path = require("path")
 const Handlebars = require("handlebars")
 const Io = require("socket.io")
 const Redis = require("ioredis")
+const Gid = require("./gid.js")
 Handlebars.registerPartial("ContentPartial", "{{{content}}}")
 
 const redis = new Redis()
+var gid = new Gid(redis)
+
 
 const server = Hapi.server({
     host: "localhost",
     port: "8080",
-    
+
     routes: {
         files: {
-            relativeTo: Path.join(__dirname, "public") 
+            relativeTo: Path.join(__dirname, "public")
         }
     }
 })
 
 const io = new Io(server.listener)
 
-async function generateGameId() {
-    var id = 0;
-    var i = 0;
-    
-    do {
-        id = Math.round(Math.random() * 100)
-        i += 1;
-    } while ( await redis.sismember("listeGameId", id) && i <= 100)
-    
-    if (i > 100) {
-
-        throw new Error("Trop de parties lancées");
-    }
-    
-    redis.sadd("listeGameId", id)
-
-    return id;
-}
-
-async function generateUserId() {
-    
-    var id = 0
-    var i = 0
-
-    do {
-        id = Math.round(Math.random() * 200)
-        i += 1;
-    } while ( await redis.sismember("listeUserId", id) && i <= 200 )
-
-    if ( i > 200 ) {
-        throw new Error("Trop d'utilisateurs")
-    }
-    
-    redis.hmset(
-        `user:${id}`, 
-        "name", "", 
-        "gameId", -1,
-        "score", 0,
-        "status", "joueur"
-    )
-
-    redis.sadd("listeUserId", id)
-
-    return id
-}
-
 const start = async () => {
-    
+
     await server.register(Inert)
     await server.register(require("vision"))
 
@@ -98,18 +55,42 @@ const start = async () => {
         method: "GET",
         path: "/",
         handler(resquest, reply) {
-            return reply.view("index")
-        } 
-        
+            return reply.view("accueil")
+        }
+
+    })
+
+    server.route({
+        method: "GET",
+        path: "/rejoindre",
+        handler(resquest, reply) {
+            return reply.view("rejoindre")
+        }
+    })
+
+    server.route({
+        method: "GET",
+        path: "/creer",
+        handler(resquest, reply) {
+            return reply.view("creer")
+        }
+    })
+
+    server.route({
+        method: "GET",
+        path: "/statistiques",
+        handler(resquest, reply) {
+            return reply.view("statistiques")
+        }
     })
 
     server.route({
         method: "POST",
-        path: "/game/{id?}",
+        path: "/game",
         async handler(request, reply) {
 
             var userId = null;
-            var gameId = request.params.id;
+            var gameId = request.payload.gameId;
             var userName = request.payload.pseudo
 
             if (!gameId) {
@@ -118,8 +99,8 @@ const start = async () => {
                 }
 
                 try {
-                    userId = await generateUserId()
-                    gameId = await generateGameId();
+                    userId = await gid.generateUserId()
+                    gameId = await gid.gererateGameId();
 
                 } catch (e) {
                     console.log(e.message)
@@ -135,7 +116,7 @@ const start = async () => {
                 reply.state("userId", `${userId}`)
 
             } else if (await redis.scard(`game:${gameId}`) < 2) {
-                userId = await generateUserId()
+                userId = await gid.generateUserId()
 
                 redis.hmset(
                     `user:${userId}`,
@@ -173,13 +154,11 @@ const start = async () => {
 
                 })
             })
-            
-            return {
-                id: gameId
-            }
+
+            return reply.redirect(`/game/${gameId}`)
         }
     })
-    
+
 
     server.route({
         method: "GET",
@@ -198,10 +177,9 @@ const start = async () => {
                 return reply.redirect("/")
             }
 
-            return reply.view("game.html")
+            return reply.view("jeux.html", null, { layout: "layout_jeu" })
         }
     })
-
 
     server.route({
         method: "GET",
@@ -279,7 +257,7 @@ const start = async () => {
         method: "GET",
         path: "/{filename}.css",
         handler: {
-            
+
             file: function(request) {
                 return "css/" + request.params.filename + ".css"
             }
@@ -290,13 +268,13 @@ const start = async () => {
         method: "GET",
         path: "/{filename}.js",
         handler: {
-            
+
             file: function(request) {
                 return "js/" + request.params.filename + ".js"
             }
         }
     })
-    
+
 
     try {
         await server.start();
@@ -310,4 +288,3 @@ const start = async () => {
 }
 
 start()
-

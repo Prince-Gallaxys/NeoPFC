@@ -1,0 +1,149 @@
+/* CSS Global */
+
+body {
+	background: #FFADD4;
+	color: #000000;
+	font-family: "Open Sans", Helvetica, sans-serif;
+	font-size: 13pt;
+	font-weight: 400;
+	line-height: 1.65em;
+	letter-spacing: 0.225em;
+	text-transform: uppercase;
+
+	display: -moz-flex;
+	display: -webkit-flex;
+	display: -ms-flex;
+	display: flex;
+	-moz-flex-direction: column;
+	-webkit-flex-direction: column;
+	-ms-flex-direction: column;
+	flex-direction: column;
+	-moz-justify-content: center;
+	-webkit-justify-content: center;
+	-ms-justify-content: center;
+	justify-content: center;
+	height: 95vh;
+	text-align: center;
+}
+
+h2 {
+	color: #000000;
+	font-weight: 800;
+	letter-spacing: 0.225em;
+	margin: 0 0 1em 0;
+	text-transform: uppercase;
+	line-height: 1.75em;
+	display: inline-block;
+	font-size: 1.75em;
+	padding: 0.35em 1em;
+	position: relative;
+}
+
+ul.actions {
+	margin: 0 0 2em 0;
+	padding-left: 1em;
+	cursor: default;
+	list-style: none;
+}
+
+
+/* Bouttons */
+
+.button.special {
+	border-radius: 3px;
+	border: 0;
+	box-shadow: inset 0 0 0 2px;
+	color: #000000;
+	cursor: pointer;
+	display: inline-block;
+	font-size: 0.8em;
+	font-weight: 600;
+	height: 3.125em;
+	letter-spacing: 0.225em;
+	line-height: 3.125em;
+	padding: 0 2.75em;
+	text-decoration: none;
+	text-transform: uppercase;
+	overflow: hidden;
+	background-color: #DC00FF;
+	box-shadow: none;
+}
+
+		
+.button.special:hover {
+	background-color: #ef5e4a;
+}
+
+
+/* Neo PFC lignes */
+
+#banner h2:before, #banner h2:after {
+	background: #000000;
+	content: '';
+	display: block;
+	height: 2px;
+	position: absolute;
+	width: 100%;
+
+}
+
+#banner h2:before {
+	top: 0;
+	left: 0;
+}
+
+#banner h2:after {
+	bottom: 0;
+	right: 0;
+}
+
+
+/* Barre de recherche page des statistiques */
+
+.recherche_p {
+	background-color: #FFADD4;
+	overflow: hidden;   /* Style de la bordure  */
+	padding: 50px 100px 50px 100px;   /* Espace entre les bords et le contenu : haut droite bas gauche  */
+}
+
+/* Champ de saisie */
+#searchthis #search {
+	background-color: #ffffff;   /* Couleur de fond */
+	border-style: solid;   /* Style de la bordure  */
+	border-width: 1px;   /* Epaisseur de la bordure  */
+	border-color: #dddddd;   /* Couleur de la bordure  */
+	padding: 5px 10px 5px 10px;   /* Espace entre les bords et le contenu : haut droite bas gauche  */
+	width: 50%;   /* Permet d'ajuster la largeur du champ de saisie à 100% */
+	box-sizing: border-box;   /* Important */
+	font-family: "Open Sans", Helvetica, sans-serif;   /* Police du texte */
+	font-size: 20pt;   /* Taille de la police du texte */
+	font-weight: normal;   /* Graisse du texte : normal = normal ; bold = gras */
+	letter-spacing: 2px;   /* Espacement des caractères */
+	text-transform: uppercase;
+	text-align: center;
+}
+
+/* Bouton valider */
+#searchthis #search-btn {
+	background-color: #DC00FF;   /* Couleur de fond */
+	border-style: solid;   /* Style de la bordure  */
+	border-width: 0px;   /* Epaisseur de la bordure  */
+	border-color: #DC00FF;   /* Couleur de la bordure  */
+	padding: 5px 10px 5px 10px;   /* Espace entre les bords et le contenu : haut droite bas gauche  */
+	width: 50%;   /* Permet d'ajuster la largeur du champ de saisie à 100% */
+	box-sizing: border-box;   /* Important */
+	font-family: "Open Sans", Helvetica, sans-serif;   /* Police du texte */
+	font-size: 20px;   /* Taille de la police du texte */
+	font-weight: normal;   /* Graisse du texte : normal = normal ; bold = gras */
+	letter-spacing: 2px;   /* Espacement des caractères */
+	margin: 10px 0 0 0;   /* Espace autour du bouton : haut droite bas gauche  */
+	text-transform: uppercase;   /* Transforme le texte en majuscules */
+	color: #000000;   /* Couleur du texte */
+}
+
+/* Bouton valider quand survolé par la souris */
+#searchthis #search-btn:hover {
+	background-color: #ef5e4a;   /* Couleur de fond */
+	color: #000000;   /* Couleur du texte */
+	cursor: pointer;   /* Apparence du curseur comme pour un lien */
+}
