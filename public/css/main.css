@@ -107,7 +107,7 @@ ul.actions {
 }
 
 /* Champ de saisie */
-#searchthis #search {
+#searchthis .search {
 	background-color: #ffffff;   /* Couleur de fond */
 	border-style: solid;   /* Style de la bordure  */
 	border-width: 1px;   /* Epaisseur de la bordure  */
@@ -147,3 +147,4 @@ ul.actions {
 	color: #000000;   /* Couleur du texte */
 	cursor: pointer;   /* Apparence du curseur comme pour un lien */
 }
+

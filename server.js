@@ -14,7 +14,7 @@ var gid = new Gid(redis)
 
 
 const server = Hapi.server({
-    host: "localhost",
+    host: "0.0.0.0",
     port: "8080",
 
     routes: {
@@ -115,45 +115,81 @@ const start = async () => {
                 )
                 reply.state("userId", `${userId}`)
 
-            } else if (await redis.scard(`game:${gameId}`) < 2) {
-                userId = await gid.generateUserId()
+                var nsp = io.of(`/game/${gameId}`)
 
-                redis.hmset(
-                    `user:${userId}`,
-                    "gameId", gameId,
-                    "name", userName
-                )
+                var validation = []
+                nsp.on("connection", function(client) {
 
-                redis.sadd("listeUserId", userId)
-                redis.sadd(`game:${gameId}`, userId)
-                reply.state("userId", `${userId}`)
+                    redis.hset("socketIdToUserId", client.id, userId)
+                    redis.hset(`user:${userId}`, "socketId", client.id)
+                    client.on("pret", function () {
+                        if (Object.keys(nsp.sockets).length > 1) {
+                            nsp.emit("nouveaujoueur")
+                        }
+                    })
+
+                    client.on("disconnect", async function(reason) {
+                        console.log(reason)
+                        redis.srem(`game:${gameId}`, userId)
+                        redis.srem("listeUserId", userId)
+                        redis.hdel("socketIdToUserId", client.id)
+                        redis.del(`user:${userId}`)
+                        if (await redis.scard(`game:${gameId}`) === 1) {
+                            redis.srem("listeGameId", gameId)
+                        }
+                    })
+
+                    client.on("deplacer", function(msg) {
+                        client.broadcast.emit("deplacer", msg)
+                        console.log("bouge")
+                    })
+
+                    client.on("valider", function (msg) {
+                        validation.push({
+                            data: msg,
+                            socket: client.id
+                        })
+                        console.log(validation.length)
+                        if (validation.length > 1) {
+                            validation.forEach((element) => {
+                                nsp.connected[element.socket].broadcast.emit("reveler", element.data)
+                            })
+                            validation = []
+                        } 
+                    })
+                })
+
+            } else if (await redis.exists(`game:${gameId}`)) {
+                if (await redis.scard(`game:${gameId}`) < 2) {
+                    userId = await gid.generateUserId()
+
+                    redis.hmset(
+                        `user:${userId}`,
+                        "gameId", gameId,
+                        "name", userName
+                    )
+
+                    redis.sadd("listeUserId", userId)
+                    redis.sadd(`game:${gameId}`, userId)
+                    reply.state("userId", `${userId}`)
+
+
+                }
+                else {
+
+                    return {
+                        err: "Partie pleine"
+                    }
+                }
 
             } else {
 
-                return reply("Partie pleine")
+                return {
+                    err: "Partie non existente"
+                }
             }
 
 
-            var nsp = io.of(`/game/${gameId}`)
-
-            nsp.on("connection", function(client) {
-
-                console.log("connection")
-                redis.hset("socketIdToUserId", client.id, userId)
-                redis.hset(`user:${userId}`, "socketId", client.id)
-
-                client.on("disconnect", async function(reason) {
-                    console.log(reason)
-                    redis.srem(`game:${gameId}`, userId)
-                    redis.srem("listeUserId", userId)
-                    redis.hdel("socketIdToUserId", client.id)
-                    redis.del(`user:${userId}`)
-                    if (await redis.scard(`game:${gameId}`) === 1) {
-                        redis.srem("listeGameId", gameId)
-                    }
-
-                })
-            })
 
             return reply.redirect(`/game/${gameId}`)
         }
@@ -166,18 +202,21 @@ const start = async () => {
         async handler(request, reply) {
 
             var userId = request.state.userId
-            console.log("Salut")
+            var nomadv = ""
+
             if (!(userId && await redis.sismember("listeUserId", userId))) {
 
-                console.log("Attention")
                 reply.unstate("userId")
-
-                console.log("Pas de probleme")
 
                 return reply.redirect("/")
             }
+            var nomjoueur = await redis.hget(`user:${userId}`, "name")
+            var game = await redis.smembers(`game:${request.params.id}`)
+            var result = game.filter(( element ) => element != userId);
+            [nomadv] = result
+            console.log(result)
 
-            return reply.view("jeux.html", null, { layout: "layout_jeu" })
+            return reply.view("jeux.html", {joueur: nomjoueur, adversaire: nomadv}, {layout: "layout_jeu"})
         }
     })
 
@@ -288,3 +327,8 @@ const start = async () => {
 }
 
 start()
+
+process.on("SIGINT", function() {
+    redis.flushall()
+    process.exit()
+})

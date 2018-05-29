@@ -6,8 +6,9 @@
 					<p>Vous pouvez rejoindre une partie en cours en entrant le nom d'une partie.</p>
 				</div>
 				<div class="recherche_p">
-					<form action="/search" id="searchthis" method="get">
-						<input id="search" name="q" type="text" placeholder="Nom de la partie" />
+					<form action="/game" id="searchthis" method="post">
+						<input class="search" name="gameId" type="text" placeholder="Numéro de la partie" />
+						<input class="search" name="pseudo" type="text" placeholder="Votre Pseudo" />
 						<input id="search-btn" type="submit" value="Rejoindre" />
 					</form>
 				</div>

@@ -3,26 +3,33 @@
 	<div id="sous-conteneur">
 		<div class="zone" id="adversaire">
 			<div class="main">
-				
+				<div class="placeholder" carte="2"></div>
+				<div class="placeholder" carte="1"></div>
+				<div class="placeholder" carte="0"></div>
 			</div>
 			<div class="deck">
 				
 			</div>
 			<div class="table">
-								
+				<div class="arriere"></div>
 			</div>
 		</div>
 		<div class="zone" id="joueur">
 			<div class="main">
-				
+				<div class="placeholder" carte="0"></div>
+				<div class="placeholder" carte="1"></div>
+				<div class="placeholder" carte="2"></div>
 			</div>
 			<div class="deck">
 				
 			</div>
 			<div class="table">
-				
+				<div class="arriere"></div>
 			</div>
 		</div>
 	</div>
+	<button id="bouton" type="button">Validez votre choix.</button>
+	<p id="statusadv"><span class="pseudo">{{adversaire}}</span> Score: <span class="score">0</span> </p>
+	<p id="statusjoueur"><span class="pseudo">{{joueur}}</span> Score: <span class="score">0</span> <span id="resultat"></span></p>
 </div>
 <script src="/script.js" charset="utf-8"></script>
